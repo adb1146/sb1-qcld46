@@ -1,9 +1,11 @@
 import React from 'react';
-import { FileText, Calendar, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { FileText, Calendar, DollarSign, CheckCircle, XCircle, Clock, Download } from 'lucide-react';
 import { Quote } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { format } from 'date-fns';
 import { updateQuoteStatus } from '../../utils/storage';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { QuoteDocument } from '../QuoteDocument';
 
 interface QuoteListProps {
   quotes: Quote[];
@@ -100,6 +102,13 @@ export function QuoteList({ quotes, onStatusChange }: QuoteListProps) {
                   <option value="bound">Bound</option>
                   <option value="expired">Expired</option>
                 </select>
+                <PDFDownloadLink
+                  document={<QuoteDocument quote={quote} />}
+                  fileName={`quote-${quote.quoteNumber}.pdf`}
+                  className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-700"
+                >
+                  <Download className="w-4 h-4" />
+                </PDFDownloadLink>
               </td>
             </tr>
           ))}

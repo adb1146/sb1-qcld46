@@ -91,10 +91,13 @@ export function AIProactiveAssistant({ businessInfo, currentSection }: AIProacti
   if (!isExpanded) {
     return (
       <button
-        onClick={() => setIsExpanded(true)}
+        onClick={() => {
+          setIsExpanded(true);
+        }}
         className="fixed bottom-4 right-4 p-3 bg-white rounded-full shadow-lg border border-blue-100 hover:bg-blue-50 transition-colors z-50"
       >
         <Brain className="w-6 h-6 text-blue-600" />
+        <span className="sr-only">Show AI Assistant</span>
       </button>
     );
   }

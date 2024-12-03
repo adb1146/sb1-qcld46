@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, DollarSign, FileTextIcon, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { FileText, Clock, DollarSign, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { SavedRating } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { format } from 'date-fns';
@@ -47,7 +47,7 @@ export function RatingList({ ratings, onGenerateQuote }: RatingListProps) {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {ratings.map((rating) => (
-            <tr key={rating.id} className="hover:bg-gray-50 cursor-pointer">
+            <tr key={rating.id} className="hover:bg-gray-50">
               <td className="px-6 py-4">
                 <div className="text-sm font-medium text-gray-900">
                   {rating.businessInfo.name}
@@ -73,7 +73,7 @@ export function RatingList({ ratings, onGenerateQuote }: RatingListProps) {
                   onClick={() => onGenerateQuote(rating)}
                   className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
                 >
-                  <FileTextIcon className="w-4 h-4" />
+                  <FileText className="w-4 h-4" />
                   Generate Quote
                 </button>
               </td>

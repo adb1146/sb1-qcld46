@@ -1,9 +1,11 @@
 import React from 'react';
-import { X, FileTextIcon, Calendar, DollarSign } from 'lucide-react';
+import { X, FileTextIcon, Calendar, DollarSign, Download } from 'lucide-react';
 import { SavedRating, Quote } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { format, addYears } from 'date-fns';
 import { saveQuote } from '../../utils/storage';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { QuoteDocument } from '../QuoteDocument';
 
 interface QuoteDialogProps {
   rating?: SavedRating;
@@ -24,11 +26,12 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
     format(new Date(), 'yyyy-MM-dd')
   );
   const [notes, setNotes] = React.useState('');
+  const [quote, setQuote] = React.useState<Quote | null>(null);
 
   if (!isOpen || !rating) return null;
 
   const handleGenerateQuote = () => {
-    const quote: Quote = {
+    const newQuote: Quote = {
       id: Date.now().toString(),
       ratingId: rating.id,
       quoteNumber: generateQuoteNumber(),
@@ -41,9 +44,9 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
       notes
     };
 
-    saveQuote(quote);
-    onQuoteGenerated?.(quote);
-    onClose();
+    saveQuote(newQuote);
+    setQuote(newQuote);
+    onQuoteGenerated?.(newQuote);
   };
 
   return (
@@ -123,18 +126,37 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
           </div>
 
           <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            <button
-              onClick={handleGenerateQuote}
-              className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:ml-3 sm:w-auto"
-            >
-              Generate Quote
-            </button>
-            <button
-              onClick={onClose}
-              className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-            >
-              Cancel
-            </button>
+            <div className="flex gap-2">
+              {!quote ? (
+                <button
+                  onClick={handleGenerateQuote}
+                  className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:ml-3 sm:w-auto"
+                >
+                  Generate Quote
+                </button>
+              ) : (
+                <PDFDownloadLink
+                  document={<QuoteDocument quote={quote} />}
+                  fileName={`quote-${quote.quoteNumber}.pdf`}
+                  className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:ml-3 sm:w-auto"
+                >
+                  {({ loading }) => 
+                    loading ? 'Preparing PDF...' : (
+                      <div className="flex items-center gap-2">
+                        <Download className="w-4 h-4" />
+                        Download Quote PDF
+                      </div>
+                    )
+                  }
+                </PDFDownloadLink>
+              )}
+              <button
+                onClick={onClose}
+                className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+              >
+                {quote ? 'Close' : 'Cancel'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
