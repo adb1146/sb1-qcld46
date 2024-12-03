@@ -1,17 +1,15 @@
 import React from 'react';
-import { X, FileTextIcon, Calendar, DollarSign, Download } from 'lucide-react';
+import { X, FileText, Calendar, DollarSign, Download } from 'lucide-react';
 import { SavedRating, Quote } from '../../types';
-import { formatCurrency } from '../../utils/formatters';
 import { format, addYears } from 'date-fns';
 import { saveQuote } from '../../utils/storage';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { QuoteDocument } from '../QuoteDocument';
+import { QuotePreview } from '../QuotePreview';
 
 interface QuoteDialogProps {
   rating?: SavedRating;
   isOpen: boolean;
   onClose: () => void;
-  onQuoteGenerated?: (quote: Quote) => void;
+  onQuoteGenerated?: () => void;
 }
 
 const generateQuoteNumber = () => {
@@ -26,7 +24,7 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
     format(new Date(), 'yyyy-MM-dd')
   );
   const [notes, setNotes] = React.useState('');
-  const [quote, setQuote] = React.useState<Quote | null>(null);
+  const [quote, setQuote] = React.useState<Quote>();
 
   if (!isOpen || !rating) return null;
 
@@ -44,9 +42,9 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
       notes
     };
 
-    saveQuote(newQuote);
     setQuote(newQuote);
-    onQuoteGenerated?.(newQuote);
+    saveQuote(newQuote);
+    onQuoteGenerated?.();
   };
 
   return (
@@ -58,7 +56,7 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
           <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <FileTextIcon className="w-5 h-5 text-blue-600" />
+                <FileText className="w-5 h-5 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">
                   Generate Quote
                 </h3>
@@ -90,7 +88,7 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
                 <h4 className="font-medium text-gray-900">Premium</h4>
                 <div className="mt-2 flex items-center gap-1 text-lg font-medium text-gray-900">
                   <DollarSign className="w-5 h-5 text-gray-400" />
-                  {formatCurrency(rating.totalPremium)}
+                  {format(rating.totalPremium, 'USD')}
                 </div>
               </div>
 
@@ -135,30 +133,28 @@ export function QuoteDialog({ rating, isOpen, onClose, onQuoteGenerated }: Quote
                   Generate Quote
                 </button>
               ) : (
-                <PDFDownloadLink
-                  document={<QuoteDocument quote={quote} />}
-                  fileName={`quote-${quote.quoteNumber}.pdf`}
+                <button
+                  onClick={onClose}
                   className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:ml-3 sm:w-auto"
                 >
-                  {({ loading }) => 
-                    loading ? 'Preparing PDF...' : (
-                      <div className="flex items-center gap-2">
-                        <Download className="w-4 h-4" />
-                        Download Quote PDF
-                      </div>
-                    )
-                  }
-                </PDFDownloadLink>
+                  View Quote
+                </button>
               )}
               <button
                 onClick={onClose}
                 className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
               >
-                {quote ? 'Close' : 'Cancel'}
+                Cancel
               </button>
             </div>
           </div>
         </div>
+
+        {quote && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
+            <QuotePreview quote={quote} />
+          </div>
+        )}
       </div>
     </div>
   );

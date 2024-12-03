@@ -1,11 +1,9 @@
 import React from 'react';
-import { FileText, Calendar, DollarSign, CheckCircle, XCircle, Clock, Download } from 'lucide-react';
+import { FileText, Clock, DollarSign, Eye } from 'lucide-react';
 import { Quote } from '../../types';
+import { QuotePreview } from '../QuotePreview';
 import { formatCurrency } from '../../utils/formatters';
 import { format } from 'date-fns';
-import { updateQuoteStatus } from '../../utils/storage';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { QuoteDocument } from '../QuoteDocument';
 
 interface QuoteListProps {
   quotes: Quote[];
@@ -13,22 +11,10 @@ interface QuoteListProps {
 }
 
 export function QuoteList({ quotes, onStatusChange }: QuoteListProps) {
-  const handleStatusChange = (quoteId: string, status: Quote['status']) => {
-    updateQuoteStatus(quoteId, status);
-    onStatusChange();
-  };
-
-  const getStatusIcon = (status: Quote['status']) => {
-    switch (status) {
-      case 'issued':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'expired':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'bound':
-        return <CheckCircle className="w-5 h-5 text-blue-500" />;
-      default:
-        return <Clock className="w-5 h-5 text-gray-500" />;
-    }
+  const [selectedQuote, setSelectedQuote] = React.useState<Quote>();
+  
+  const handleViewQuote = (quote: Quote) => {
+    setSelectedQuote(quote);
   };
 
   return (
@@ -37,13 +23,13 @@ export function QuoteList({ quotes, onStatusChange }: QuoteListProps) {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Quote Number
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Business
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Effective Date
+              Quote Number
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Date
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Premium
@@ -51,7 +37,7 @@ export function QuoteList({ quotes, onStatusChange }: QuoteListProps) {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -60,21 +46,20 @@ export function QuoteList({ quotes, onStatusChange }: QuoteListProps) {
           {quotes.map((quote) => (
             <tr key={quote.id} className="hover:bg-gray-50">
               <td className="px-6 py-4">
-                <div className="flex items-center">
-                  <FileText className="w-4 h-4 text-gray-400 mr-2" />
-                  <span className="text-sm font-medium text-gray-900">
-                    {quote.quoteNumber}
-                  </span>
+                <div className="text-sm font-medium text-gray-900">
+                  {quote.businessInfo.name}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {quote.businessInfo.fein}
                 </div>
               </td>
-              <td className="px-6 py-4">
-                <div className="text-sm text-gray-900">{quote.businessInfo.name}</div>
-                <div className="text-sm text-gray-500">{quote.businessInfo.fein}</div>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {quote.quoteNumber}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center text-sm text-gray-500">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  {format(new Date(quote.effectiveDate), 'MMM d, yyyy')}
+                  <Clock className="w-4 h-4 mr-1" />
+                  {format(new Date(quote.createdAt), 'MMM d, yyyy')}
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -84,36 +69,51 @@ export function QuoteList({ quotes, onStatusChange }: QuoteListProps) {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(quote.status)}
-                  <span className="text-sm font-medium capitalize text-gray-700">
-                    {quote.status}
-                  </span>
-                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full
+                  ${quote.status === 'draft' ? 'bg-gray-100 text-gray-800' :
+                    quote.status === 'issued' ? 'bg-blue-100 text-blue-800' :
+                    quote.status === 'bound' ? 'bg-green-100 text-green-800' :
+                    'bg-red-100 text-red-800'}`}>
+                  {quote.status.toUpperCase()}
+                </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <select
-                  value={quote.status}
-                  onChange={(e) => handleStatusChange(quote.id, e.target.value as Quote['status'])}
-                  className="text-sm border border-gray-300 rounded-md px-2 py-1"
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button
+                  onClick={() => handleViewQuote(quote)}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="issued">Issued</option>
-                  <option value="bound">Bound</option>
-                  <option value="expired">Expired</option>
-                </select>
-                <PDFDownloadLink
-                  document={<QuoteDocument quote={quote} />}
-                  fileName={`quote-${quote.quoteNumber}.pdf`}
-                  className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-700"
-                >
-                  <Download className="w-4 h-4" />
-                </PDFDownloadLink>
+                  <Eye className="w-4 h-4" />
+                  View Quote
+                </button>
               </td>
             </tr>
           ))}
+          {quotes.length === 0 && (
+            <tr>
+              <td colSpan={6} className="px-6 py-8 text-center">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No quotes generated yet</p>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
+      
+      {selectedQuote && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
+          <div className="max-w-4xl mx-auto">
+            <QuotePreview quote={selectedQuote} />
+            <div className="fixed top-4 right-4">
+              <button
+                onClick={() => setSelectedQuote(undefined)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-white rounded-md shadow-sm hover:bg-gray-50 border border-gray-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
